@@ -15,8 +15,11 @@ describe('Central de Atendimento ao Cliente TAT', () => {
   })
 
   it('exibe mensagem de erro ao submeter o formulário com um email com formatação inválida', () => {
+    cy.clock()
     cy.fillMandatoryFieldsAndSubmit('Danilo', 'Marroco', 'emailemail.com', 'Estou aprendendo Cypress')
     cy.get('.error').should('be.visible').contains('Valide os campos obrigatórios!')
+    cy.tick(3000)
+    cy.get('.error').should('not.be.visible')
   })
 
   it('valida campo telefone só aceita numero', () => {
@@ -24,6 +27,7 @@ describe('Central de Atendimento ao Cliente TAT', () => {
   })
 
   it('exibe mensagem de erro quando o telefone se torna obrigatório mas não é preenchido antes do envio do formulário', () => {
+    cy.clock()
     cy.get('#firstName').type('Danilo')
     cy.get('#lastName').type('Marroco')
     cy.get('#email').type('email@email.com')
@@ -32,6 +36,8 @@ describe('Central de Atendimento ao Cliente TAT', () => {
     // cy.get('button[type="submit"]').click()
     cy.contains('button', 'Enviar').click()
     cy.get('.error').should('be.visible').contains('Valide os campos obrigatórios!')
+    cy.tick(3000)
+    cy.get('.error').should('not.be.visible')
   })
 
   it('preenche e limpa os campos nome, sobrenome, email e telefone', () => {
@@ -150,4 +156,51 @@ describe('Central de Atendimento ao Cliente TAT', () => {
     cy.visit('./src/privacy.html')
     cy.get('#title').should('have.text', 'CAC TAT - Política de privacidade')
   })
+
+  it('exibe e esconde as mensagens de sucesso e erro usando o .invoke()', () => {
+    cy.get('.success')
+    .should('not.be.visible')
+    .invoke('show')
+    .should('be.visible')
+    .and('contain', 'Mensagem enviada com sucesso.')
+    .invoke('hide')
+    .should('not.be.visible')
+  
+    cy.get('.error')
+    .should('not.be.visible')
+    .invoke('show')
+    .should('be.visible')
+    .and('contain', 'Valide os campos obrigatórios')
+    .invoke('hide')
+    .should('not.be.visible')
+  })
+
+  it('preenche a area de texto usando o comando invoke', () => {
+    const longText = Cypress._.repeat('lorem ipsum lorem', 20) 
+    cy.get('#open-text-area')
+    .invoke('val', longText)
+    .should('have.value', longText)
+  })
+
+  it('faz uma requisição HTTP', () => {
+    cy.request({
+      method:'GET', 
+      url: 'https://cac-tat.s3.eu-central-1.amazonaws.com/index.html'
+    }).then((response) => {
+      expect(response.status).to.equal(200)
+      expect(response.statusText).to.equal('OK')
+      expect(response.body).to.include('CAC TAT')
+
+      // refactor com desestruturação
+      const { status, statusText, body} = response
+      expect(status).to.equal(200)
+      expect(statusText).to.equal('OK')
+      expect(body).to.include('CAC TAT')
+    })
+  })
+
+  it.only('encontra o gato escondido', () => {
+    cy.get('#cat').invoke('show').should('be.visible')
+  })
 })
+
